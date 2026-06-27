@@ -22,6 +22,10 @@ on:
         description: CONFIG of the KUnit tests (without CONFIG_)
         required: true
         default: NVMEM_LAYOUT_DLINK_ODM_TLV_KUNIT_TEST
+      linux_path:
+        description: Path to the linux kernel sources
+        required: true
+        default: linux
 
 jobs:
   execute:
@@ -30,9 +34,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+      - name: Checkout Kernel Sources
+        uses: actions/checkout@v5
         with:
           repository: ${{ inputs.repository }}
           ref: ${{ inputs.ref }}
+          path: ${{ inputs.linux_path }}
       - name: Update APT
         run: sudo apt-get update
 
@@ -40,10 +47,10 @@ jobs:
         run: sudo apt-get install -y build-essential gcc make bc flex bison libelf-dev libssl-dev qemu-system-x86 python3
 
       - name: Create default config
-        run: make defconfig
+        run: make -C ${{ inputs.linux_path }} defconfig
 
       - name: Extend default config
-        run: ./scripts/config --enable OF --enable NVMEM_LAYOUTS --enable ${{ inputs.module_config }}
+        run: ./${{ inputs.linux_path }}/scripts/kconfig/merge_config.sh .config ../defaultconfig
 
       - name: Build NVMEM
         run: make drivers/nvmem/layouts
