@@ -50,7 +50,7 @@ jobs:
         run: make -C ${{ inputs.linux_path }} defconfig
 
       - name: Extend default config
-        run: ./${{ inputs.linux_path }}/scripts/kconfig/merge_config.sh ${{ inputs.linux_path }}/.config defaultconfig
+        run: cd ${{ inputs.linux_path }} && ./scripts/kconfig/merge_config.sh .config ../defaultconfig
 
       - name: Build NVMEM
         run: make -C /${{ inputs.linux_path }} drivers/nvmem/layouts
