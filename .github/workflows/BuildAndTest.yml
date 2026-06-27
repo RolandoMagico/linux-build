@@ -13,15 +13,6 @@ on:
         required: true
         default: D-Link-ODM
 
-      module_config:
-        description: CONFIG of the module (without CONFIG_)
-        required: true
-        default: NVMEM_LAYOUT_DLINK_ODM_TLV
-
-      test_config:
-        description: CONFIG of the KUnit tests (without CONFIG_)
-        required: true
-        default: NVMEM_LAYOUT_DLINK_ODM_TLV_KUNIT_TEST
       linux_path:
         description: Path to the linux kernel sources
         required: true
