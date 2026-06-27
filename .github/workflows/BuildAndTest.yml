@@ -63,7 +63,10 @@ jobs:
             -e "${{ inputs.test_config }}"
 
           make O=build olddefconfig
-
+      - name: Debug Output 1
+        run: grep dlink build/.config
+      - name: Debug Output 2
+        run: grep NVMEM build/.config
       - name: Compile module
         run: make -j"$(nproc)" O=build drivers/nvmem/layouts/
 
