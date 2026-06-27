@@ -1,4 +1,4 @@
-name: Kernel module CI
+name: Build and test Kernel Module
 
 on:
   workflow_dispatch:
@@ -24,7 +24,7 @@ on:
         default: NVMEM_LAYOUT_DLINK_ODM_TLV_KUNIT_TEST
 
 jobs:
-  build:
+  execute:
     runs-on: ubuntu-24.04
 
     steps:
