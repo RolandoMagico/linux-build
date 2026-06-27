@@ -24,7 +24,7 @@ on:
         default: NVMEM_LAYOUT_DLINK_ODM_TLV_KUNIT_TEST
 
 jobs:
-  test:
+  execute:
     runs-on: ubuntu-24.04
 
     steps:
@@ -51,6 +51,9 @@ jobs:
           cat > .kunitconfig <<EOF
           CONFIG_KUNIT=y
           CONFIG_KUNIT_ALL_TESTS=y
+
+          CONFIG_OF=y
+          CONFIG_OF_EARLY_FLATTREE=y
 
           CONFIG_NVMEM=y
           CONFIG_NVMEM_LAYOUTS=y
