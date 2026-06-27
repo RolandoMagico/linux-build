@@ -24,11 +24,11 @@ on:
         default: NVMEM_LAYOUT_DLINK_ODM_TLV_KUNIT_TEST
 
 jobs:
-  execute:
+  test:
     runs-on: ubuntu-24.04
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v5
         with:
           repository: ${{ inputs.repository }}
@@ -38,48 +38,55 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            build-essential \
-            gcc \
-            make \
-            bc \
-            flex \
-            bison \
-            libelf-dev \
-            libssl-dev \
-            qemu-system-x86 \
-            python3
+            build-essential gcc make bc \
+            flex bison \
+            libelf-dev libssl-dev \
+            qemu-system-x86 python3
 
-      - name: Configure kernel
-        run: |
-          mkdir build
-
-          make O=build defconfig
-
-          scripts/config --file build/.config \
-            -e KUNIT \
-            -e NVMEM \
-            -e NVMEM_LAYOUTS \
-            -e "${{ inputs.module_config }}" \
-            -e "${{ inputs.test_config }}"
-
-          make O=build olddefconfig
-      - name: Debug Output 1
-        run: grep dlink build/.config
-      - name: Debug Output 2
-        run: grep NVMEM build/.config
-      - name: Compile module
-        run: make -j"$(nproc)" O=build drivers/nvmem/layouts/
-
-      - name: Create .kunitconfig
+      # =========================
+      # SINGLE SOURCE CONFIG
+      # =========================
+      - name: Create KUnit config
         run: |
           cat > .kunitconfig <<EOF
           CONFIG_KUNIT=y
-          CONFIG_KUNIT_TEST=y
+          CONFIG_KUNIT_ALL_TESTS=y
+
           CONFIG_NVMEM=y
           CONFIG_NVMEM_LAYOUTS=y
+
           CONFIG_${{ inputs.module_config }}=y
           CONFIG_${{ inputs.test_config }}=y
           EOF
 
+      # =========================
+      # Build + normalize config
+      # =========================
+      - name: Prepare kernel config
+        run: |
+          make O=build defconfig
+          make O=build olddefconfig KCONFIG_ALLCONFIG=.kunitconfig
+
+      # =========================
+      # Debug (important)
+      # =========================
+      - name: Debug config
+        run: |
+          grep -E "NVMEM|DLINK" build/.config || true
+
+      # =========================
+      # Build ONLY your subsystem
+      # =========================
+      - name: Build module
+        run: |
+          make -j$(nproc) O=build drivers/nvmem/layouts/
+
+      # =========================
+      # Run KUnit WITHOUT config reset
+      # =========================
       - name: Run KUnit
-        run: ./tools/testing/kunit/kunit.py run --arch=x86_64 --jobs $(nproc)
+        run: |
+          ./tools/testing/kunit/kunit.py run \
+            --kunitconfig=.kunitconfig \
+            --arch=x86_64 \
+            --jobs $(nproc)
