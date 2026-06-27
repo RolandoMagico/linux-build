@@ -28,48 +28,8 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: ${{ inputs.repository }}
-          ref: ${{ inputs.ref }}
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            gcc \
-            make \
-            bc \
-            flex \
-            bison \
-            libelf-dev \
-            libssl-dev
-
-      - name: Configure kernel
-        run: |
-          mkdir build
-
-          make O=build defconfig
-
-          scripts/config --file build/.config \
-            -e KUNIT \
-            -e NVMEM \
-            -e NVMEM_LAYOUTS \
-            -e "${{ inputs.module_config }}" \
-            -e "${{ inputs.test_config }}"
-
-          make O=build olddefconfig
-
-      - name: Compile module
-        run: make -j"$(nproc)" O=build drivers/nvmem/layouts/
-
-  kunit:
-    needs: build
-    runs-on: ubuntu-24.04
-
-    steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v5
         with:
           repository: ${{ inputs.repository }}
           ref: ${{ inputs.ref }}
@@ -88,6 +48,24 @@ jobs:
             libssl-dev \
             qemu-system-x86 \
             python3
+
+      - name: Configure kernel
+        run: |
+          mkdir build
+
+          make O=build defconfig
+
+          scripts/config --file build/.config \
+            -e KUNIT \
+            -e NVMEM \
+            -e NVMEM_LAYOUTS \
+            -e "${{ inputs.module_config }}" \
+            -e "${{ inputs.test_config }}"
+
+          make O=build olddefconfig
+
+      - name: Compile module
+        run: make -j"$(nproc)" O=build drivers/nvmem/layouts/
 
       - name: Create .kunitconfig
         run: |
