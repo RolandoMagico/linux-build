@@ -52,11 +52,8 @@ jobs:
       - name: Extend default config
         run: cd ${{ inputs.linux_path }} && ./scripts/kconfig/merge_config.sh .config ../defaultconfig
 
-      - name: Build NVMEM
-        run: make -C ${{ inputs.linux_path }} drivers/nvmem/layouts
+      - name: Build Kernel
+        run: make -C ${{ inputs.linux_path }} -j$(nproc)
 
-      - name: Extend default config for testing
-        run: ./scripts/config --enable KUNIT --disable KUNIT_ALL_TESTS --enable ${{ inputs.test_config }}
-        
       - name: Run Tests
-        run: ./tools/testing/kunit/punit.py run
+        run: cd ${{ inputs.linux_path }} && ./tools/testing/kunit/punit.py run
