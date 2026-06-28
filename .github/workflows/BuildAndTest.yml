@@ -1,4 +1,4 @@
-name: Kernel module CI
+name: Build and test Kernel Module
 
 on:
   workflow_dispatch:
@@ -13,92 +13,32 @@ on:
         required: true
         default: D-Link-ODM
 
-      module_config:
-        description: CONFIG of the module (without CONFIG_)
+      linux_path:
+        description: Path to the linux kernel sources
         required: true
-        default: NVMEM_LAYOUT_DLINK_ODM_TLV
-
-      test_config:
-        description: CONFIG of the KUnit tests (without CONFIG_)
-        required: true
-        default: NVMEM_LAYOUT_DLINK_ODM_TLV_KUNIT_TEST
+        default: linux
 
 jobs:
-  build:
+  execute:
     runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          show-progress: false
+      - name: Checkout Kernel Sources
+        uses: actions/checkout@v5
         with:
           repository: ${{ inputs.repository }}
           ref: ${{ inputs.ref }}
+          path: ${{ inputs.linux_path }}
+          show-progress: false
+      - name: Update APT
+        run: sudo apt-get update
 
       - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            gcc \
-            make \
-            bc \
-            flex \
-            bison \
-            libelf-dev \
-            libssl-dev
+        run: sudo apt-get install -y build-essential gcc make bc flex bison libelf-dev libssl-dev qemu-system-x86 python3
 
-      - name: Configure kernel
-        run: |
-          mkdir build
-
-          make O=build defconfig
-
-          scripts/config --file build/.config \
-            -e KUNIT \
-            -e NVMEM \
-            -e NVMEM_LAYOUTS \
-            -e "${{ inputs.module_config }}" \
-            -e "${{ inputs.test_config }}"
-
-          make O=build olddefconfig
-
-      - name: Compile module
-        run: make -j"$(nproc)" O=build drivers/nvmem/layouts/
-
-  kunit:
-    needs: build
-    runs-on: ubuntu-24.04
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: ${{ inputs.repository }}
-          ref: ${{ inputs.ref }}
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            gcc \
-            make \
-            bc \
-            flex \
-            bison \
-            libelf-dev \
-            libssl-dev \
-            qemu-system-x86 \
-            python3
-
-      - name: Create .kunitconfig
-        run: |
-          cat > .kunitconfig <<EOF
-          CONFIG_KUNIT=y
-          CONFIG_KUNIT_TEST=y
-          CONFIG_NVMEM=y
-          CONFIG_NVMEM_LAYOUTS=y
-          CONFIG_${{ inputs.module_config }}=y
-          CONFIG_${{ inputs.test_config }}=y
-          EOF
-
-      - name: Run KUnit
-        run: ./tools/testing/kunit/kunit.py run --arch=x86_64 --jobs $(nproc)
+      - name: Run Tests
+        run: cd ${{ inputs.linux_path }} && ./tools/testing/kunit/kunit.py run --arch=x86_64 --kunitconfig=../defaultconfig
