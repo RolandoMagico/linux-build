@@ -37,14 +37,5 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get install -y build-essential gcc make bc flex bison libelf-dev libssl-dev qemu-system-x86 python3
 
-      - name: Create default config
-        run: make -C ${{ inputs.linux_path }} defconfig
-
-      - name: Extend default config
-        run: cd ${{ inputs.linux_path }} && ./scripts/kconfig/merge_config.sh .config ../defaultconfig
-
-      - name: Build Kernel
-        run: make -C ${{ inputs.linux_path }} -j$(nproc)
-
       - name: Run Tests
-        run: cd ${{ inputs.linux_path }} && ./tools/testing/kunit/kunit.py run
+        run: cd ${{ inputs.linux_path }} && ./tools/testing/kunit/kunit.py run --arch=x86_64 --kunitconfig=../defaultconfig
