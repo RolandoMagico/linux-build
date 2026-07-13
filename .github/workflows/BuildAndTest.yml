@@ -12,7 +12,11 @@ on:
         description: Branch or Commit
         required: true
         default: D-Link-ODM
-
+      fetch_depth:
+        description: The depth for fetching the repository  
+        required: true
+        type: number
+        default: 100
       linux_path:
         description: Path to the linux kernel sources
         required: true
@@ -33,7 +37,7 @@ jobs:
           repository: ${{ inputs.repository }}
           ref: ${{ inputs.ref }}
           path: ${{ inputs.linux_path }}
-          fetch-depth: 0
+          fetch-depth: ${{ inputs.fetch_depth }}
           show-progress: false
       - name: Update APT
         run: sudo apt-get update
