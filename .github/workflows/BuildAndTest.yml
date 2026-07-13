@@ -33,6 +33,7 @@ jobs:
           repository: ${{ inputs.repository }}
           ref: ${{ inputs.ref }}
           path: ${{ inputs.linux_path }}
+          fetch-depth: 0
           show-progress: false
       - name: Update APT
         run: sudo apt-get update
@@ -42,3 +43,10 @@ jobs:
 
       - name: Run Tests
         run: cd ${{ inputs.linux_path }} && ./tools/testing/kunit/kunit.py run --arch=x86_64 --kunitconfig=../defaultconfig --raw_output
+      - name: Fetch master branch
+        run: cd ${{ inputs.linux_path }} && git fetch origin master
+      - name: Create temporary patch
+        run: cd ${{ inputs.linux_path }} && git diff origin/master...HEAD > changes.patch
+      - name: Check temporary patch
+        run: cd ${{ inputs.linux_path }} && perl scripts/checkpatch.pl --strict changes.patch
+
