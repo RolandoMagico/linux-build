@@ -41,4 +41,4 @@ jobs:
         run: sudo apt-get install -y build-essential gcc make bc flex bison libelf-dev libssl-dev qemu-system-x86 python3
 
       - name: Run Tests
-        run: cd ${{ inputs.linux_path }} && ./tools/testing/kunit/kunit.py run --arch=x86_64 --kunitconfig=../defaultconfig
+        run: cd ${{ inputs.linux_path }} && ./tools/testing/kunit/kunit.py run --arch=x86_64 --kunitconfig=../defaultconfig --raw_output
